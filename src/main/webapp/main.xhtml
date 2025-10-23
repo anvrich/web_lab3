@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+    <title>Лабораторная 3 — Основная страница</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+    <script type="text/javascript"
+            src="https://www.desmos.com/api/v1.8/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+</h:head>
+
+<h:body>
+    <ui:include src="header.xhtml"/>
+
+    <div id="main-container">
+        <div class="graph-block">
+            <div id="calculator" style="width:500px;height:500px;"></div>
+        </div>
+
+        <div class="form-block">
+            <h:form id="formCoords" styleClass="coords-form">
+                <h3>Введите координаты</h3>
+
+                <h:inputHidden id="rValue" value="#{mainBean.r}"/>
+
+                <div class="form-row">
+                    <h:outputLabel for="x" value="X:" styleClass="form-label"/>
+                    <p:spinner id="x" value="#{mainBean.x}" min="-3" max="3" stepFactor="1" styleClass="form-input"/>
+                    <p:message for="x" styleClass="form-message"/>
+                </div>
+
+                <div class="form-row">
+                    <h:outputLabel for="y" value="Y:" styleClass="form-label"/>
+                    <p:inputText id="y" value="#{mainBean.y}" styleClass="form-input">
+                        <f:convertNumber type="number"/>
+                        <f:validateDoubleRange minimum="-5" maximum="5"/>
+                    </p:inputText>
+                    <p:message for="y" styleClass="form-message"/>
+                </div>
+
+                <div class="r-panel">
+                    <h:commandLink value="1" styleClass="r-link" action="#{mainBean.changeR(1.0)}">
+                        <f:ajax execute="@this" render="formCoords:rPanel formCoords:rValue :results-table"
+                                onevent="updateGraph"/>
+                    </h:commandLink>
+                    <h:commandLink value="1.5" styleClass="r-link" action="#{mainBean.changeR(1.5)}">
+                        <f:ajax execute="@this" render="formCoords:rPanel formCoords:rValue :results-table"
+                                onevent="updateGraph"/>
+                    </h:commandLink>
+                    <h:commandLink value="2" styleClass="r-link" action="#{mainBean.changeR(2.0)}">
+                        <f:ajax execute="@this" render="formCoords:rPanel formCoords:rValue :results-table"
+                                onevent="updateGraph"/>
+                    </h:commandLink>
+                    <h:commandLink value="2.5" styleClass="r-link" action="#{mainBean.changeR(2.5)}">
+                        <f:ajax execute="@this" render="formCoords:rPanel formCoords:rValue :results-table"
+                                onevent="updateGraph"/>
+                    </h:commandLink>
+                    <h:commandLink value="3" styleClass="r-link" action="#{mainBean.changeR(3.0)}">
+                        <f:ajax execute="@this" render="formCoords:rPanel formCoords:rValue :results-table"
+                                onevent="updateGraph"/>
+                    </h:commandLink>
+                </div>
+                <h:panelGroup id="rPanel">
+                    <h:outputText value="Текущий R: " styleClass="r-current-label"/>
+                    <h:outputText value="#{mainBean.r}" styleClass="r-current-value"/>
+                </h:panelGroup>
+
+                <h:commandButton id="submitBtn" styleClass="main-btn" value="Проверить" action="#{mainBean.submit}">
+                    <f:ajax execute="@form" render=":results-table :errorPanel" onevent="handleSubmit"/>
+                </h:commandButton>
+
+                <p:remoteCommand name="savePoint" action="#{mainBean.submit}" update=":results-table :errorPanel"/>
+            </h:form>
+
+            <h:panelGroup id="errorPanel" layout="block" styleClass="error-panel">
+                <h4>Валидация</h4>
+                <div class="error-messages">
+                    <div id="errorPanelContent" class="error-item"></div>
+                </div>
+            </h:panelGroup>
+
+        </div>
+
+        <div class="results-container">
+            <h:dataTable id="results-table" value="#{dataBean.records}" var="rec" styleClass="result-table">
+                <h:column><f:facet name="header">X</f:facet> #{rec.x}</h:column>
+                <h:column><f:facet name="header">Y</f:facet> #{rec.y}</h:column>
+                <h:column><f:facet name="header">R</f:facet> #{rec.r}</h:column>
+                <h:column>
+                    <f:facet name="header">Результат</f:facet>
+                    <h:outputText value="#{rec.result ? '✅' : '❌'}"/>
+                </h:column>
+                <h:column><f:facet name="header">Время</f:facet> #{rec.dt}</h:column>
+            </h:dataTable>
+
+            <h:form id="controlForm" style="margin-top:15px;">
+                <h:commandButton styleClass="secondary-btn" value="Назад" action="goToStart"/>
+                <h:commandButton styleClass="secondary-btn" value="Удалить все" action="#{dataBean.clear}">
+                    <f:ajax render=":results-table" onevent="updateGraph"/>
+                </h:commandButton>
+            </h:form>
+        </div>
+    </div>
+
+    <h:outputScript library="js" name="desmos.js"/>
+</h:body>
+</html>

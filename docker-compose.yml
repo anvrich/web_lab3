@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    container_name: weblab3-db
+    environment:
+      POSTGRES_DB: anvrich
+      POSTGRES_USER: anvrich7
+      POSTGRES_PASSWORD: anvrich7
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anvrich7 -d anvrich"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: weblab3-app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
