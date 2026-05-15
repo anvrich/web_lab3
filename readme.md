@@ -29,7 +29,7 @@
 
 
 <p align="center">
-  <img src="/img/1.png" alt="Область" width="500">
+  <img src="img/1.png" alt="Область" width="500">
 </p>
 
 
@@ -49,3 +49,4 @@
 11. ORM-библиотеки **Hibernate** и **EclipseLink**: особенности, API, сходства и различия.
 12. Технология **JPA**: особенности, API, интеграция с ORM-провайдерами.
 
+# Ant build
