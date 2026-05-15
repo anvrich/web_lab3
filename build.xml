@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="weblab3_demo" default="build" basedir=".">
+
+    <!-- Загрузка параметров из файла -->
+    <property file="build.properties"/>
+
+    <!-- Classpath для компиляции -->
+    <path id="compile.classpath">
+        <pathelement path="${lib.jakartaee}"/>
+        <pathelement path="${lib.lombok}"/>
+        <pathelement path="${lib.primefaces}"/>
+        <pathelement path="${lib.postgresql}"/>
+    </path>
+
+    <!-- Classpath для тестов -->
+    <path id="test.classpath">
+        <path refid="compile.classpath"/>
+        <pathelement path="${build.classes.dir}"/>
+        <pathelement path="${build.test.classes.dir}"/>
+        <pathelement path="${lib.junit.api}"/>
+        <pathelement path="${lib.junit.standalone}"/>
+    </path>
+
+    <!-- ==================== init ==================== -->
+    <target name="init">
+        <mkdir dir="${build.classes.dir}"/>
+        <mkdir dir="${build.test.classes.dir}"/>
+        <mkdir dir="${build.test.reports.dir}"/>
+        <mkdir dir="${build.javadoc.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <!-- ==================== compile ==================== -->
+    <target name="compile" depends="init">
+        <javac srcdir="${src.main.java.dir}"
+               destdir="${build.classes.dir}"
+               source="${compile.version}"
+               target="${compile.version}"
+               encoding="${encoding}"
+               includeantruntime="false">
+            <classpath refid="compile.classpath"/>
+            <compilerarg value="-processorpath"/>
+            <compilerarg value="${lib.lombok}"/>
+        </javac>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${src.main.resources.dir}"/>
+        </copy>
+    </target>
+
+    <!-- ==================== build ==================== -->
+    <target name="build" depends="compile">
+        <manifest file="${build.classes.dir}/MANIFEST.MF">
+            <attribute name="Main-Class" value="${project.main.class}"/>
+            <attribute name="Implementation-Version" value="${project.version}"/>
+        </manifest>
+        <jar destfile="${dist.dir}/${jar.name}"
+             basedir="${build.classes.dir}"
+             manifest="${build.classes.dir}/MANIFEST.MF"/>
+    </target>
+
+    <!-- ==================== clean ==================== -->
+    <target name="clean">
+        <delete dir="${build.classes.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- ==================== doc ==================== -->
+    <target name="doc" depends="build">
+        <checksum file="${dist.dir}/${jar.name}" algorithm="MD5"  property="jar.md5"/>
+        <checksum file="${dist.dir}/${jar.name}" algorithm="SHA-1" property="jar.sha1"/>
+
+        <manifest file="${build.classes.dir}/MANIFEST.MF" mode="update">
+            <attribute name="JAR-MD5"  value="${jar.md5}"/>
+            <attribute name="JAR-SHA1" value="${jar.sha1}"/>
+        </manifest>
+
+        <javadoc sourcepath="${src.main.java.dir}"
+                 destdir="${build.javadoc.dir}"
+                 encoding="${encoding}"
+                 author="true"
+                 version="true"
+                 use="true">
+            <classpath refid="compile.classpath"/>
+        </javadoc>
+
+        <jar destfile="${dist.dir}/${jar.name}"
+             basedir="${build.classes.dir}"
+             manifest="${build.classes.dir}/MANIFEST.MF"
+             update="true">
+            <zipfileset dir="${build.javadoc.dir}" prefix="javadoc"/>
+        </jar>
+    </target>
+
+    <!-- ==================== alt ==================== -->
+    <target name="alt">
+        <delete dir="${build.alt.src.dir}"/>
+        <delete dir="${build.alt.classes.dir}"/>
+        <mkdir dir="${build.alt.src.dir}"/>
+        <mkdir dir="${build.alt.classes.dir}"/>
+
+        <copy todir="${build.alt.src.dir}">
+            <fileset dir="${src.main.java.dir}"/>
+        </copy>
+
+        <replace dir="${build.alt.src.dir}" token="${alt.old.class}" value="${alt.new.class}">
+            <include name="**/*.java"/>
+        </replace>
+        <replaceregexp match="${alt.old.var}" replace="${alt.new.var}" flags="g">
+            <fileset dir="${build.alt.src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </replaceregexp>
+
+        <move file="${build.alt.src.dir}/s373329/weblab3_demo/${alt.old.class}.java"
+              tofile="${build.alt.src.dir}/s373329/weblab3_demo/${alt.new.class}.java"/>
+
+        <javac srcdir="${build.alt.src.dir}"
+               destdir="${build.alt.classes.dir}"
+               source="${compile.version}"
+               target="${compile.version}"
+               encoding="${encoding}"
+               includeantruntime="false">
+            <classpath refid="compile.classpath"/>
+            <compilerarg value="-processorpath"/>
+            <compilerarg value="${lib.lombok}"/>
+        </javac>
+
+        <copy todir="${build.alt.classes.dir}">
+            <fileset dir="${src.main.resources.dir}"/>
+        </copy>
+
+        <manifest file="${build.alt.classes.dir}/MANIFEST.MF">
+            <attribute name="Main-Class" value="${project.main.class}"/>
+            <attribute name="Implementation-Version" value="${project.version}-alt"/>
+        </manifest>
+        <jar destfile="${dist.dir}/${jar.alt.name}"
+             basedir="${build.alt.classes.dir}"
+             manifest="${build.alt.classes.dir}/MANIFEST.MF"/>
+    </target>
+
+    <!-- ==================== env ==================== -->
+    <target name="env" depends="build">
+        <java jar="${dist.dir}/${jar.name}"
+              fork="true"
+              failonerror="false"
+              jvm="${env.java.home}/bin/java">
+            <jvmarg line="${env.jvm.args}"/>
+        </java>
+    </target>
+
+    <!-- ==================== report ==================== -->
+    <target name="report" depends="test">
+        <exec executable="git" failonerror="true">
+            <arg value="add"/>
+            <arg value="-f"/>
+            <arg value="${build.test.reports.dir}"/>
+        </exec>
+        <exec executable="git" failonerror="true">
+            <arg value="commit"/>
+            <arg value="-m"/>
+            <arg value="Add JUnit test report"/>
+        </exec>
+    </target>
+
+    <!-- ==================== team ==================== -->
+    <macrodef name="build-revision">
+        <attribute name="rev"/>
+        <attribute name="dir"/>
+        <sequential>
+            <exec executable="git" failonerror="false">
+                <arg value="worktree"/>
+                <arg value="add"/>
+                <arg value="@{dir}"/>
+                <arg value="@{rev}"/>
+            </exec>
+            <ant antfile="@{dir}/build.xml"
+                 target="build"
+                 dir="@{dir}"
+                 inheritAll="false"
+                 failonerror="false"/>
+            <copy todir="${build.team.dir}" failonerror="false">
+                <fileset dir="@{dir}/dist">
+                    <include name="*.jar"/>
+                </fileset>
+                <globmapper from="*.jar" to="*-@{rev}.jar"/>
+            </copy>
+            <exec executable="git" failonerror="false">
+                <arg value="worktree"/>
+                <arg value="remove"/>
+                <arg value="--force"/>
+                <arg value="@{dir}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <target name="team" depends="build">
+        <property name="build.team.dir" value="build/team-jars"/>
+        <mkdir dir="${build.team.dir}"/>
+
+        <build-revision rev="HEAD~1" dir="build/team-rev1"/>
+        <build-revision rev="HEAD~2" dir="build/team-rev2"/>
+        <build-revision rev="HEAD~3" dir="build/team-rev3"/>
+        <build-revision rev="HEAD~4" dir="build/team-rev4"/>
+
+        <copy todir="${build.team.dir}" failonerror="false">
+            <fileset dir="${dist.dir}">
+                <include name="*.jar"/>
+            </fileset>
+            <globmapper from="*.jar" to="*-HEAD.jar"/>
+        </copy>
+
+        <zip destfile="${dist.dir}/${zip.team.name}"
+             basedir="${build.team.dir}"/>
+    </target>
+
+    <!-- ==================== scp ==================== -->
+    <target name="scp" depends="build">
+        <exec executable="scp" failonerror="true">
+            <arg value="-P"/>
+            <arg value="${scp.port}"/>
+            <arg value="-i"/>
+            <arg value="${scp.key}"/>
+            <arg value="${dist.dir}/${jar.name}"/>
+            <arg value="${scp.user}@${scp.host}:${scp.remote.path}"/>
+        </exec>
+    </target>
+
+    <!-- ==================== music ==================== -->
+    <target name="music" depends="build">
+        <exec executable="afplay">
+            <arg value="${music.file}"/>
+        </exec>
+    </target>
+
+    <!-- ==================== xml ==================== -->
+    <target name="xml">
+        <xmlvalidate failonerror="true" lenient="true" warn="true">
+            <fileset dir="${basedir}/src">
+                <include name="**/*.xml"/>
+                <include name="**/*.xhtml"/>
+            </fileset>
+        </xmlvalidate>
+    </target>
+
+    <!-- ==================== test ==================== -->
+    <target name="test" depends="build">
+        <javac srcdir="${src.test.java.dir}"
+               destdir="${build.test.classes.dir}"
+               encoding="${encoding}"
+               includeantruntime="false">
+            <classpath refid="test.classpath"/>
+            <compilerarg value="-processorpath"/>
+            <compilerarg value="${lib.lombok}"/>
+        </javac>
+        <java jar="${lib.junit.standalone}" fork="true" failonerror="true">
+            <arg value="--class-path"/>
+            <arg pathref="test.classpath"/>
+            <arg value="--scan-class-path"/>
+            <arg value="${build.test.classes.dir}"/>
+            <arg value="--reports-dir"/>
+            <arg value="${build.test.reports.dir}"/>
+        </java>
+    </target>
+
+</project>
