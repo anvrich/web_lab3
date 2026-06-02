@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="weblab3_demo" default="build" basedir=".">
-
+ 
     <!-- Загрузка параметров из файла -->
     <property file="build.properties"/>
 
@@ -60,7 +60,7 @@
 
     <!-- ==================== clean ==================== -->
     <target name="clean">
-        <delete dir="${build.classes.dir}"/>
+        <delete dir="build"/>
         <delete dir="${dist.dir}"/>
     </target>
 
@@ -173,11 +173,11 @@
                 <arg value="@{dir}"/>
                 <arg value="@{rev}"/>
             </exec>
-            <ant antfile="@{dir}/build.xml"
-                 target="build"
-                 dir="@{dir}"
-                 inheritAll="false"
-                 failonerror="false"/>
+            <exec executable="ant" dir="@{dir}" failonerror="false">
+                <arg value="-f"/>
+                <arg value="@{dir}/build.xml"/>
+                <arg value="build"/>
+            </exec>
             <copy todir="${build.team.dir}" failonerror="false">
                 <fileset dir="@{dir}/dist">
                     <include name="*.jar"/>
